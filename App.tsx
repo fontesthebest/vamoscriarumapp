@@ -5,11 +5,14 @@
  * @format
  */
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import type {PropsWithChildren} from 'react';
 import {
+  Button,
+  FlatList,
   SafeAreaView,
   ScrollView,
+  SectionList,
   StatusBar,
   StyleSheet,
   Text,
@@ -24,20 +27,26 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import CadastrarFonecedor from './screen/CadastroFornecedor';
+import Fornecedor from './screen/Fornecedor';
+import { Picker } from '@react-native-picker/picker';
+
+
+
 
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
 function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+ 
   return (
     <View style={styles.sectionContainer}>
       <Text
         style={[
           styles.sectionTitle,
           {
-            color: isDarkMode ? Colors.white : Colors.black,
+            color: Colors.black,
           },
         ]}>
         {title}
@@ -46,7 +55,7 @@ function Section({children, title}: SectionProps): React.JSX.Element {
         style={[
           styles.sectionDescription,
           {
-            color: isDarkMode ? Colors.light : Colors.dark,
+            color: Colors.dark,
           },
         ]}>
         {children}
@@ -56,41 +65,56 @@ function Section({children, title}: SectionProps): React.JSX.Element {
 }
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [fornecedor,setFonecedor] = useState<any[]>([])
+  const [isActive, setIsActive] = useState(false);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  const viewFiltrar = () =>{
+    isActive ? setIsActive(false) : setIsActive(true);
+    return null;
+  }
+  const [categoria,setCategoria] = useState("")
+
+  const filtrar = useCallback((isActive:boolean) => {
+    return (fornecedor || []).map((item:any, index: number)=> {
+      if (!isActive ) {
+        return <Fornecedor nome={item.nome} endereco ={item.endereco} contato={item.contato} produtos={item.produtos} key={index}/>
+      }
+      if (isActive && item.produtos == categoria) {
+        return <Fornecedor nome={item.nome} endereco ={item.endereco} contato={item.contato} produtos={item.produtos} key={index}/>;
+      }
+      return <></>
+    })
+    
+  }, [categoria])
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
+    <SafeAreaView style={styles.backgroundStyle}>
+      <ScrollView>
+      <CadastrarFonecedor onCreate={(nome, endereco, contato, produtos ) => {
+        setFonecedor([...fornecedor, {nome, endereco, contato, produtos} ])
+
+      }}/>
+
+      <Button title='Filtrar' onPress={viewFiltrar}/>
+      <View style={isActive ? styles.activeFiltro : styles.inactiveFiltro}>
+            <Text>Selecione a Categoria para filtrar:</Text>
+            <Picker   
+                selectedValue={categoria}
+                onValueChange={(itemValue, itemIndex) => {
+                    setCategoria(itemValue)
+                    if (itemValue == "tudo") {
+                      setIsActive(false)
+                    }
+                  }
+                }>
+                <Picker.Item label="Selecione uma Categoria" value="tudo" />
+                <Picker.Item label="Beleza" value="beleza" />
+                <Picker.Item label="Eletrodomestico" value="eletrodomesticos" />
+                <Picker.Item label="Moda" value="moda" />
+                <Picker.Item label="Tecnologia" value="tecnologia" />
+            </Picker>
+      </View>
+      {filtrar(isActive)}
       </ScrollView>
     </SafeAreaView>
   );
@@ -112,6 +136,17 @@ const styles = StyleSheet.create({
   },
   highlight: {
     fontWeight: '700',
+  },
+  backgroundStyle: {
+    backgroundColor: Colors.lighter,
+    padding: 24,
+    flexGrow: 1,
+  },
+  inactiveFiltro: {
+    display:'none',
+  },
+  activeFiltro: {
+    display:'flex'
   },
 });
 
